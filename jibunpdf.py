@@ -256,6 +256,73 @@ class PDFEditorApp(ctk.CTk, TkinterDnD.DnDWrapper):
                 "エラー", f"ファイルの保存中にエラーが発生しました:\n{e}"
             )
 
+    def refresh_page_list_ui(self):
+        """【変更】右端にゴミ箱（削除）ボタンを配置するよう拡張"""
+        for widget in self.list_frame.winfo_children():
+            widget.destroy()
+
+        for index, page_info in enumerate(self.pages_list):
+            row_frame = ctk.CTkFrame(self.list_frame)
+            row_frame.pack(fill="x", padx=5, pady=4)
+
+            # サムネイル画像の配置
+            img_label = ctk.CTkLabel(row_frame, text="", image=page_info["thumb_img"])
+            img_label.pack(side="left", padx=10, pady=2)
+            img_label.bind("<Double-1>", lambda e, p=page_info: self.open_zoom_window(p))
+
+            # ページのテキストラベル
+            lbl = ctk.CTkLabel(row_frame, text=page_info["label"], anchor="w")
+            lbl.pack(side="left", padx=10, fill="x", expand=True)
+            lbl.bind("<Double-1>", lambda e, p=page_info: self.open_zoom_window(p))
+
+            # ───【追加】右端：ゴミ箱ボタン（視認性のために少し赤みを持たせる） ───
+            del_btn = ctk.CTkButton(
+                row_frame,
+                text="削除",
+                width=65,
+                fg_color="#A34949",
+                hover_color="#BD5A5A",
+                command=lambda i=index: self.delete_page(i),
+            )
+            del_btn.pack(side="right", padx=10)
+            # ──────────────────────────────────────────────────────────────
+
+            # 中央右：下へボタン
+            if index < len(self.pages_list) - 1:
+                down_btn = ctk.CTkButton(
+                    row_frame,
+                    text="↓ 下へ",
+                    width=60,
+                    command=lambda i=index: self.move_page(i, 1),
+                )
+                down_btn.pack(side="right", padx=2)
+            else:
+                # レイアウト崩れ防止用の透明なダミースペース
+                spacer_down = ctk.CTkLabel(row_frame, text="", width=60)
+                spacer_down.pack(side="right", padx=2)
+
+            # 中央右：上へボタン
+            if index > 0:
+                up_btn = ctk.CTkButton(
+                    row_frame,
+                    text="↑ 上へ",
+                    width=60,
+                    command=lambda i=index: self.move_page(i, -1),
+                )
+                up_btn.pack(side="right", padx=2)
+            else:
+                # レイアウト崩れ防止用の透明なダミースペース
+                spacer_up = ctk.CTkLabel(row_frame, text="", width=60)
+                spacer_up.pack(side="right", padx=2)
+
+    # ───【新設】指定されたインデックスのページを削除する関数 ───
+    def delete_page(self, index):
+        """リストから要素を削除し、ヘッダーの数字とUIを最新状態にする"""
+        if 0 <= index < len(self.pages_list):
+            self.pages_list.pop(index)
+            self.update_ui_state()
+            self.refresh_page_list_ui()
+      
 
 if __name__ == "__main__":
     app = PDFEditorApp()
